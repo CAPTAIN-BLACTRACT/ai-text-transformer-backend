@@ -1,4 +1,4 @@
-import { api, APIError, Gateway, Header, Cookie, cors } from "encore.dev/api";
+import { api, APIError, Gateway, Header, Cookie } from "encore.dev/api";
 import { authHandler } from "encore.dev/auth";
 import { authDB } from "./db";
 import * as bcrypt from "bcryptjs";
@@ -155,17 +155,20 @@ export const login = api<LoginRequest, AuthResponse>(
   }
 );
 
+export interface TokenResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+  };
+}
+
 // This is a new, dedicated endpoint for the extension to get a token
-export const getToken = api<LoginRequest, AuthResponse>(
+export const getToken = api<LoginRequest, TokenResponse>(
   {
     expose: true,
     method: "POST",
     path: "/auth/get-token",
-    cors: { 
-      allowOrigins: ["chrome-extension://*"],
-      allowMethods: ["POST"],
-      allowHeaders: ["Content-Type"],
-    },
   },
   async (req) => {
     const user = await authDB.queryRow`
@@ -188,6 +191,7 @@ export const getToken = api<LoginRequest, AuthResponse>(
     };
   }
 );
+
 // Logs out the current user.
 export const logout = api<void, LogoutResponse>(
   { expose: true, method: "POST", path: "/auth/logout" },
