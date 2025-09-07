@@ -1,4 +1,11 @@
 import { Service } from "encore.dev/service";
 
-// This file must define and export a new Service.
-export default new Service("token");
+// This defines the "token" service and applies a CORS policy to ALL endpoints within it.
+export default new Service("token", {
+  cors: {
+    allowOrigins: ["chrome-extension://*"],
+    allowMethods: ["POST"],
+    allowHeaders: ["Content-Type"],
+  },
+});
+
