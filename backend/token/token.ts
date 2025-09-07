@@ -19,12 +19,12 @@ export interface AuthResponse {
   };
 }
 
-// Dedicated endpoint for the extension to get a token.
+// Dedicated endpoint for the Chrome extension to get a token.
 export const getToken = api<LoginRequest, AuthResponse>(
   {
     expose: true,
     method: "POST",
-    path: "/auth/get-token",
+    path: "/auth/get-token"
   },
   async (req) => {
     const user = await authDB.queryRow`
