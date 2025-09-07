@@ -24,8 +24,7 @@ export const getToken = api<LoginRequest, AuthResponse>(
   {
     expose: true,
     method: "POST",
-    path: "/token", // THE PATH IS NOW SIMPLIFIED TO AVOID CONFLICTS
-    // We have completely removed the 'cors' property.
+    path: "/token", // The path is simplified to avoid conflicts.
   },
   async (req) => {
     const user = await authDB.queryRow`
@@ -43,7 +42,6 @@ export const getToken = api<LoginRequest, AuthResponse>(
     return {
       status: 200,
       headers: {
-        // This is the header that tells the browser it's okay for the extension to see the response.
         "Access-Control-Allow-Origin": "*",
       },
       body: {
