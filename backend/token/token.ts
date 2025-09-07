@@ -19,14 +19,30 @@ export interface AuthResponse {
   };
 }
 
-// This is the final, correct version of the getToken endpoint.
+// This is the final version of the getToken endpoint.
+// It is now configured to handle both POST and OPTIONS requests.
 export const getToken = api<LoginRequest, AuthResponse>(
   {
     expose: true,
-    method: "POST",
-    path: "/token", // The path is simplified to avoid conflicts.
+    method: "POST, OPTIONS", // We now accept both methods
+    path: "/token/token", 
   },
   async (req) => {
+    // --- THIS IS THE CORS PREFLIGHT HANDLER ---
+    // If the browser is asking for permission, we grant it and end the request.
+    if (req.method === "OPTIONS") {
+      return {
+        status: 204, // No Content - the standard for a successful preflight
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      };
+    }
+    // --- END OF PREFLIGHT HANDLER ---
+
+    // If it's a POST request, we proceed with the login logic as before.
     const user = await authDB.queryRow`
       SELECT id, email, password_hash FROM users WHERE email = ${req.email}
     `;
@@ -38,7 +54,6 @@ export const getToken = api<LoginRequest, AuthResponse>(
 
     const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret(), { expiresIn: "7d" });
 
-    // We manually construct the response to include the CORS header.
     return {
       status: 200,
       headers: {
