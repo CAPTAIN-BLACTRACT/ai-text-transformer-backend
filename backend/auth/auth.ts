@@ -4,6 +4,7 @@ import { authDB } from "./db";
 import * as bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { secret } from "encore.dev/config";
+import { api, APIError, cors } from "encore.dev/api"; 
 
 const jwtSecret = secret("JWTSecret");
 
@@ -157,12 +158,24 @@ export const login = api<LoginRequest, AuthResponse>(
 
 // This is a new, dedicated endpoint for the extension to get a token
 export const getToken = api<LoginRequest, AuthResponse>(
-  { expose: true, method: "POST", path: "/auth/get-token" },
+  {
+    expose: true,
+    method: "POST",
+    path: "/auth/get-token",
+    // --- ADD THIS ENTIRE 'cors' SECTION ---
+    cors: {
+      allowOrigins: ["chrome-extension://*"],
+      allowMethods: ["POST"],
+      allowHeaders: ["Content-Type"],
+    },
+    // ------------------------------------
+  },
   async (req) => {
+    // ... the rest of your function logic remains exactly the same
     const user = await authDB.queryRow`
       SELECT id, email, password_hash FROM users WHERE email = ${req.email}
     `;
-    
+
     if (!user) { throw APIError.unauthenticated("invalid credentials"); }
 
     const isValidPassword = await bcrypt.compare(req.password, user.password_hash);
@@ -176,9 +189,7 @@ export const getToken = api<LoginRequest, AuthResponse>(
         id: user.id.toString(),
         email: user.email,
       },
-    };
-  }
-);
+
 
 // Logs out the current user.
 export const logout = api<void, LogoutResponse>(
