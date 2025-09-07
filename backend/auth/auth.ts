@@ -189,7 +189,9 @@ export const getToken = api<LoginRequest, AuthResponse>(
         id: user.id.toString(),
         email: user.email,
       },
-
+    };
+  }
+);
 
 // Logs out the current user.
 export const logout = api<void, LogoutResponse>(
