@@ -24,7 +24,7 @@ export const getToken = api<LoginRequest, AuthResponse>(
   {
     expose: true,
     method: "POST",
-    path: "/auth/get-token",
+    path: "/token", // THE PATH IS NOW SIMPLIFIED TO AVOID CONFLICTS
     // We have completely removed the 'cors' property.
   },
   async (req) => {
