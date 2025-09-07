@@ -1,10 +1,9 @@
-import { api, APIError } from "encore.dev/api";
-import { SQLDatabase } from "encore.dev/storage/sqldb";
+import { api, APIError, cors } from "encore.dev/api";
+import { authDB } from "../auth/db"; // Correctly import the DB connection
 import * as bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { secret } from "encore.dev/config";
 
-const authDB = SQLDatabase.named("auth");
 const jwtSecret = secret("JWTSecret");
 
 // Define only the interfaces needed for this endpoint
@@ -12,7 +11,6 @@ export interface LoginRequest {
   email: string;
   password: string;
 }
-
 export interface AuthResponse {
   token: string;
   user: {
@@ -21,12 +19,17 @@ export interface AuthResponse {
   };
 }
 
-// The getToken endpoint, now in its own isolated service
+// The getToken endpoint, with the critical 'cors' block added
 export const getToken = api<LoginRequest, AuthResponse>(
   {
     expose: true,
     method: "POST",
     path: "/auth/get-token",
+    cors: { // THIS IS THE CRUCIAL FIX
+      allowOrigins: ["chrome-extension://*"],
+      allowMethods: ["POST"],
+      allowHeaders: ["Content-Type"],
+    },
   },
   async (req) => {
     const user = await authDB.queryRow`
