@@ -1,5 +1,8 @@
-// token/encore.service.ts
-export default {
+import { api } from "encore.dev/api";
+
+// This is the service configuration
+export default api.service({
+  // Your service configuration
   cors: {
     allow_origins: [
       "chrome-extension://*",
@@ -13,4 +16,4 @@ export default {
     allow_credentials: true,
     max_age: 86400,
   },
-};
+});
