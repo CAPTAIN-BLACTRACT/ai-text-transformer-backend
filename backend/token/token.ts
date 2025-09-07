@@ -18,26 +18,15 @@ export interface AuthResponse {
   };
 }
 
-// 1. Define the public API endpoint. It is automatically exposed by the gateway below.
-const getToken = api<LoginRequest, AuthResponse>({
-  expose: true,
-  method: "POST",
-  path: "/auth/get-token",
-});
-
-// 2. This Gateway is public (no authHandler) and has the CORS policy.
-// It automatically picks up the 'getToken' endpoint defined above.
-export default new Gateway(getToken, {
-  cors: {
-    allowOrigins: ["chrome-extension://*"],
-    allowMethods: ["POST"],
-    allowHeaders: ["Content-Type"],
+// 1. Define the API endpoint with its full implementation.
+// The Gateway below will automatically discover and expose it.
+export const getToken = api<LoginRequest, AuthResponse>(
+  {
+    expose: true,
+    method: "POST",
+    path: "/auth/get-token",
   },
-});
-
-
-// 3. Define the implementation for the 'getToken' endpoint.
-getToken.implement(async (req) => {
+  async (req) => {
     const user = await authDB.queryRow`
       SELECT id, email, password_hash FROM users WHERE email = ${req.email}
     `;
@@ -56,5 +45,15 @@ getToken.implement(async (req) => {
         email: user.email,
       },
     };
+  }
+);
+
+// 2. This Gateway is public (no authHandler) and applies the CORS policy to all APIs in this file.
+export const gw = new Gateway({
+  cors: {
+    allowOrigins: ["chrome-extension://*"],
+    allowMethods: ["POST"],
+    allowHeaders: ["Content-Type"],
+  },
 });
 
