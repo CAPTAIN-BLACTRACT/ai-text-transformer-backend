@@ -161,7 +161,6 @@ export const getToken = api<LoginRequest, AuthResponse>(
     expose: true,
     method: "POST",
     path: "/auth/get-token",
-    // ENSURE THERE IS NO SLASH '/' BEFORE THIS 'cors:' LINE
     cors: { 
       allowOrigins: ["chrome-extension://*"],
       allowMethods: ["POST"],
