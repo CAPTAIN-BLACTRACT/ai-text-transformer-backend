@@ -7,6 +7,7 @@ import { secret } from "encore.dev/config";
 
 const jwtSecret = secret("JWTSecret");
 
+// --- INTERFACES ---
 export interface AuthParams {
   authorization?: Header<"Authorization">;
 }
@@ -14,29 +15,114 @@ export interface AuthData {
   userID: string;
   email: string;
 }
-// ... other interfaces like SignupRequest, LoginRequest etc.
+export interface SignupRequest {
+  email: string;
+  password: string;
+}
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+export interface AuthResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+  };
+}
+export interface LogoutResponse {
+  session: Cookie<"session">;
+}
 
+// --- AUTH HANDLER & GATEWAY ---
 const auth = authHandler<AuthParams, AuthData>(
-  // ... your existing authHandler logic is fine
+  async (data) => {
+    const token = data.authorization?.replace("Bearer ", "");
+    if (!token) {
+      throw APIError.unauthenticated("missing token");
+    }
+    try {
+      const decoded = jwt.verify(token, jwtSecret()) as any;
+      const user = await authDB.queryRow`
+        SELECT id, email FROM users WHERE id = ${decoded.userId}
+      `;
+      if (!user) {
+        throw APIError.unauthenticated("user not found");
+      }
+      return {
+        userID: user.id.toString(),
+        email: user.email,
+      };
+    } catch (err) {
+      throw APIError.unauthenticated("invalid token", err);
+    }
+  }
 );
-
 export const gw = new Gateway({ authHandler: auth });
 
-// ... your existing SignupRequest, LoginRequest, AuthResponse, LogoutResponse interfaces are fine
+// --- API ENDPOINTS ---
 
 // Creates a new user account.
 export const signup = api<SignupRequest, AuthResponse>(
-  // ... your existing signup function is fine
+  { expose: true, method: "POST", path: "/auth/signup" },
+  async (req) => {
+    const existingUser = await authDB.queryRow`
+      SELECT id FROM users WHERE email = ${req.email}
+    `;
+    if (existingUser) {
+      throw APIError.alreadyExists("user already exists");
+    }
+    const passwordHash = await bcrypt.hash(req.password, 10);
+    const user = await authDB.queryRow`
+      INSERT INTO users (email, password_hash)
+      VALUES (${req.email}, ${passwordHash})
+      RETURNING id, email
+    `;
+    if (!user) {
+      throw APIError.internal("failed to create user");
+    }
+    const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret(), { expiresIn: "7d" });
+    return {
+      token,
+      user: {
+        id: user.id.toString(),
+        email: user.email,
+      },
+    };
+  }
 );
 
 // Logs in an existing user for the web app.
 export const login = api<LoginRequest, AuthResponse>(
-  // ... your existing login function is fine
+  { expose: true, method: "POST", path: "/auth/login" },
+  async (req) => {
+    const user = await authDB.queryRow`
+      SELECT id, email, password_hash FROM users WHERE email = ${req.email}
+    `;
+    if (!user) { throw APIError.unauthenticated("invalid credentials"); }
+    const isValidPassword = await bcrypt.compare(req.password, user.password_hash);
+    if (!isValidPassword) { throw APIError.unauthenticated("invalid credentials"); }
+    const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret(), { expiresIn: "7d" });
+    return {
+      token,
+      user: {
+        id: user.id.toString(),
+        email: user.email,
+      },
+    };
+  }
 );
 
 // Logs out the current user.
 export const logout = api<void, LogoutResponse>(
-  // ... your existing logout function is fine
+  { expose: true, method: "POST", path: "/auth/logout" },
+  async () => {
+    return {
+      session: {
+        value: "",
+        expires: new Date(0),
+      },
+    };
+  }
 );
 
-// The getToken function has been REMOVED from this file.
