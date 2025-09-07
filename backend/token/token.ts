@@ -1,12 +1,11 @@
 import { api, APIError, cors } from "encore.dev/api";
-import { authDB } from "../auth/db"; // Correctly import the DB connection
+import { authDB } from "../auth/db";
 import * as bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { secret } from "encore.dev/config";
 
 const jwtSecret = secret("JWTSecret");
 
-// Define only the interfaces needed for this endpoint
 export interface LoginRequest {
   email: string;
   password: string;
@@ -19,13 +18,13 @@ export interface AuthResponse {
   };
 }
 
-// The getToken endpoint, with the critical 'cors' block added
 export const getToken = api<LoginRequest, AuthResponse>(
   {
     expose: true,
     method: "POST",
     path: "/auth/get-token",
-    cors: { // THIS IS THE CRUCIAL FIX
+    // The typo is removed. There is NO slash before 'cors'.
+    cors: { 
       allowOrigins: ["chrome-extension://*"],
       allowMethods: ["POST"],
       allowHeaders: ["Content-Type"],
@@ -52,3 +51,4 @@ export const getToken = api<LoginRequest, AuthResponse>(
     };
   }
 );
+
