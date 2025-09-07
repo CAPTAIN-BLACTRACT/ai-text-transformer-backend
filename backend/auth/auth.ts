@@ -1,10 +1,9 @@
-import { api, APIError, Gateway, Header, Cookie } from "encore.dev/api";
+import { api, APIError, Gateway, Header, Cookie, cors } from "encore.dev/api";
 import { authHandler } from "encore.dev/auth";
 import { authDB } from "./db";
 import * as bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { secret } from "encore.dev/config";
-import { api, APIError, cors } from "encore.dev/api"; 
 
 const jwtSecret = secret("JWTSecret");
 
@@ -157,21 +156,19 @@ export const login = api<LoginRequest, AuthResponse>(
 );
 
 // This is a new, dedicated endpoint for the extension to get a token
+
 export const getToken = api<LoginRequest, AuthResponse>(
   {
     expose: true,
     method: "POST",
     path: "/auth/get-token",
-    // --- ADD THIS ENTIRE 'cors' SECTION ---
-    cors: {
+    cors: { // The extra '/' is removed from here
       allowOrigins: ["chrome-extension://*"],
       allowMethods: ["POST"],
       allowHeaders: ["Content-Type"],
     },
-    // ------------------------------------
   },
   async (req) => {
-    // ... the rest of your function logic remains exactly the same
     const user = await authDB.queryRow`
       SELECT id, email, password_hash FROM users WHERE email = ${req.email}
     `;
@@ -192,7 +189,6 @@ export const getToken = api<LoginRequest, AuthResponse>(
     };
   }
 );
-
 // Logs out the current user.
 export const logout = api<void, LogoutResponse>(
   { expose: true, method: "POST", path: "/auth/logout" },
