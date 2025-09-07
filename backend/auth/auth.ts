@@ -156,13 +156,13 @@ export const login = api<LoginRequest, AuthResponse>(
 );
 
 // This is a new, dedicated endpoint for the extension to get a token
-
 export const getToken = api<LoginRequest, AuthResponse>(
   {
     expose: true,
     method: "POST",
     path: "/auth/get-token",
-    cors: {
+    // ENSURE THERE IS NO SLASH '/' BEFORE THIS 'cors:' LINE
+    cors: { 
       allowOrigins: ["chrome-extension://*"],
       allowMethods: ["POST"],
       allowHeaders: ["Content-Type"],
@@ -172,7 +172,7 @@ export const getToken = api<LoginRequest, AuthResponse>(
     const user = await authDB.queryRow`
       SELECT id, email, password_hash FROM users WHERE email = ${req.email}
     `;
-
+    
     if (!user) { throw APIError.unauthenticated("invalid credentials"); }
 
     const isValidPassword = await bcrypt.compare(req.password, user.password_hash);
