@@ -1,17 +1,5 @@
-import { defineService } from "encore.dev/service"
-
-interface ServiceConfig {
-  cors?: {
-    allow_origins: string[];
-    allow_methods: string[];
-    allow_headers: string[];
-    expose_headers: string[];
-    allow_credentials: boolean;
-    max_age: number;
-  };
-}
-
-const config: ServiceConfig = {
+// token/encore.service.ts
+export default {
   cors: {
     allow_origins: [
       "chrome-extension://*",
@@ -26,5 +14,3 @@ const config: ServiceConfig = {
     max_age: 86400,
   },
 };
-
-export default defineService(config);
