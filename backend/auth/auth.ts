@@ -162,7 +162,7 @@ export const getToken = api<LoginRequest, AuthResponse>(
     expose: true,
     method: "POST",
     path: "/auth/get-token",
-    cors: { // The extra '/' is removed from here
+    cors: {
       allowOrigins: ["chrome-extension://*"],
       allowMethods: ["POST"],
       allowHeaders: ["Content-Type"],
