@@ -1,3 +1,4 @@
-import { Service } from "encore.dev/service";
+import { gw } from "./token";
 
-export default new Service("token");
+// Expose the Gateway from token.ts as the service definition
+export default gw;
