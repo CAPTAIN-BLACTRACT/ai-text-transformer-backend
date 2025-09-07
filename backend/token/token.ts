@@ -1,4 +1,4 @@
-import { api, APIError, cors, Gateway } from "encore.dev/api"; // Import Gateway
+import { api, APIError, cors, Gateway } from "encore.dev/api";
 import { authDB } from "../auth/db";
 import * as bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -18,14 +18,26 @@ export interface AuthResponse {
   };
 }
 
-// 1. Define the endpoint WITHOUT the cors block
-const getToken = api<LoginRequest, AuthResponse>(
-  {
-    expose: true,
-    method: "POST",
-    path: "/auth/get-token",
+// 1. Define the public API endpoint. It is automatically exposed by the gateway below.
+const getToken = api<LoginRequest, AuthResponse>({
+  expose: true,
+  method: "POST",
+  path: "/auth/get-token",
+});
+
+// 2. This Gateway is public (no authHandler) and has the CORS policy.
+// It automatically picks up the 'getToken' endpoint defined above.
+export default new Gateway(getToken, {
+  cors: {
+    allowOrigins: ["chrome-extension://*"],
+    allowMethods: ["POST"],
+    allowHeaders: ["Content-Type"],
   },
-  async (req) => {
+});
+
+
+// 3. Define the implementation for the 'getToken' endpoint.
+getToken.implement(async (req) => {
     const user = await authDB.queryRow`
       SELECT id, email, password_hash FROM users WHERE email = ${req.email}
     `;
@@ -44,16 +56,5 @@ const getToken = api<LoginRequest, AuthResponse>(
         email: user.email,
       },
     };
-  }
-);
-
-// 2. Create a new public Gateway and apply the CORS policy here
-export const gw = new Gateway({
-  services: [getToken], // Expose the getToken endpoint through this gateway
-  cors: {
-    allowOrigins: ["chrome-extension://*"],
-    allowMethods: ["POST"],
-    allowHeaders: ["Content-Type"],
-  },
 });
 
